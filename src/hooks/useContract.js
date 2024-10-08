@@ -1,13 +1,12 @@
 import { useMemo } from "react";
-import useRunners from "./useRunners";
+import useWalletConnection from "./useWalletConnection";
 import { Contract } from "ethers";
-import ABI from "../ABI/proposal.json";
+import ABI from "../ABI/DexBlog.json";
 
 const useContract = (withSigner = false) => {
-  const { readOnlyProvider, signer } = useRunners();
+  const { readOnlyProvider, signer } = useWalletConnection();
 
   return useMemo(() => {
-
     if (withSigner) {
       if (!signer) return null;
       return new Contract(import.meta.env.VITE_CONTRACT_ADDRESS, ABI, signer);
@@ -18,7 +17,6 @@ const useContract = (withSigner = false) => {
       ABI,
       readOnlyProvider
     );
-    
   }, [readOnlyProvider, signer, withSigner]);
 };
 

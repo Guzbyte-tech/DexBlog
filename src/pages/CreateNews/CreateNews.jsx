@@ -1,31 +1,63 @@
 import { useState } from "react";
 import { toast } from "react-toastify";
+import useCreateNews from "../../hooks/useCreateNews";
+import ReactQuill from "react-quill";
+import "react-quill/dist/quill.snow.css";
 
 const CreateNews = () => {
-  const [state, setState] = useState({
-    title: "",
-    body: "",
-    upload: "",
-  });
+  const handleFormSubmision = useCreateNews();
+  const [loading, setLoading] = useState(false);
   const [upload, setUpload] = useState();
-  const handleInputChange = (name, e) => {
-    setState((preState) => ({ ...preState, [name]: e.target.value }));
-  };
-  const { title, body } = state;
-
   const [errors, setErrors] = useState({
     title: "",
     body: "",
     upload: "",
   });
 
+  const [state, setState] = useState({
+    title: "",
+    body: "",
+    upload: "",
+  });
+
+  const { title, body } = state;
+
+  // Quill Editor modules configuration
+  const modules = {
+    toolbar: [
+      [{ header: [1, 2, false] }],
+      ["bold", "italic", "underline", "strike", "blockquote"],
+      [
+        { list: "ordered" },
+        { list: "bullet" },
+        { indent: "-1" },
+        { indent: "+1" },
+      ],
+      ["link", "image"],
+      ["clean"],
+    ],
+  };
+
+  // Handle input change for title
+  const handleInputChange = (name, e) => {
+    setState((prevState) => ({ ...prevState, [name]: e.target.value }));
+  };
+
+  // Handle Quill editor change for body
+  const handleEditorChange = (value) => {
+    setState((prevState) => ({ ...prevState, body: value }));
+  };
+
+  // Handle file upload change
   const handleFileChange = (event) => {
     setUpload(event.target.files[0]); // Get the selected image file
   };
 
+  // Handle form submission
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log("From Submited", title);
+    setLoading(true);
+
     let formIsValid = true;
     const newErrors = { title: "", body: "", upload: "" };
 
@@ -43,27 +75,22 @@ const CreateNews = () => {
       newErrors.upload = "Select a blog image.";
       formIsValid = false;
     }
+
     setErrors(newErrors);
     if (!formIsValid) {
-      console.log(errors);
-      toast.error("Error submiting form.");
-      // Handle form submission (e.g., send data to API)
+      setLoading(false)
+      toast.error("Error submitting form.");
+      return;
     }
 
+    // If form is valid, submit the form
     try {
-      const formData = new FormData();
-      formData.append("title", title);
-      formData.append("content", body);
-      formData.append("blog_image", upload);
-      
-      // Inspect the contents of formData
-      for (let [key, value] of formData.entries()) {
-        console.log(key, value);
-      }
-      
+      handleFormSubmision(title, body, upload);
     } catch (error) {
       console.log("Error publishing news to the blochain. ", error);
       toast.error("Error uploading file or sending to blockchain");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -77,9 +104,10 @@ const CreateNews = () => {
                 Create News
               </h2>
               <div className="mt-10 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
+                {/* Title Input */}
                 <div className="col-span-full">
                   <label
-                    htmlFor="about"
+                    htmlFor="title"
                     className="block text-sm font-medium leading-6 text-gray-900"
                   >
                     Title
@@ -107,6 +135,7 @@ const CreateNews = () => {
                   </p>
                 </div>
 
+                {/* Blog Body */}
                 <div className="col-span-full">
                   <label
                     htmlFor="body"
@@ -115,24 +144,25 @@ const CreateNews = () => {
                     Blog Body
                   </label>
                   <div className="mt-2">
-                    <textarea
-                      id="body"
-                      name="body"
-                      rows="3"
-                      onChange={(e) => handleInputChange("body", e)}
-                      value={body}
+                    <ReactQuill
                       className={`block w-full rounded-md border px-1.5 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 sm:text-sm sm:leading-6 ${
                         errors.body
                           ? "border-red-500 ring-red-500"
                           : "focus:ring-2 focus:ring-inset focus:ring-indigo-600"
                       }`}
-                    ></textarea>
+                      value={body}
+                      onChange={handleEditorChange}
+                      // style={{ height: "300px" }}
+                      modules={modules}
+                      placeholder="Write something..."
+                    />
                     {errors.body && (
                       <p className="text-red-500 text-sm mt-1">{errors.body}</p>
                     )}
                   </div>
                 </div>
 
+                {/* Cover Photo */}
                 <div className="col-span-full">
                   <label
                     htmlFor="cover-photo"
@@ -179,18 +209,25 @@ const CreateNews = () => {
                           {errors.upload}
                         </p>
                       )}
+                      {upload && (
+                        <p className="text-green-500 text-sm mt-1">
+                          File selected: {upload.name}
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
+
+          {/* Submit Button */}
           <div className="mt-6 flex items-center justify-end gap-x-6">
             <button
               type="submit"
               className="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
             >
-              Create Post
+              {loading ? "Submitting..." : "Create Post"}
             </button>
           </div>
         </form>

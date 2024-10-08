@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { jsonRpcProvider } from "../constants/provider";
 
 const useWalletConnection = () => {
+  
   const [signer, setSigner] = useState();
   const { walletProvider } = useAppKitProvider("eip155");
 
